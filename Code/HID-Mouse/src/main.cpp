@@ -26,7 +26,7 @@ void scroll(int amount) {
 }
 
 const int step = 30;
-const int stepDelay = 150;
+const int stepDelay = 10000;
 int mouseStep = 0;
 unsigned long lastStepTime = 0;
 

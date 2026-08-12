@@ -25,7 +25,7 @@ void scroll(int amount) {
   bleMouse.move(0,0, amount);
 }
 
-const int step = 20;
+const int step = 30;
 const int stepDelay = 150;
 int mouseStep = 0;
 unsigned long lastStepTime = 0;
@@ -38,13 +38,13 @@ void runMouse() {
 
   switch (mouseStep) {
     case 0: moveMouse(step, 0); break;
-    case 1: scroll(1); break;
+    case 1: scroll(5); break;
     case 2: moveMouse(0, step); break;
-    case 3: scroll(-1); break;
+    case 3: scroll(-5); break;
     case 4: moveMouse(-step, 0); break;
-    case 5: scroll(1); break;
+    case 5: scroll(5); break;
     case 6: moveMouse(0, -step); break;
-    case 7: scroll(-1); break;
+    case 7: scroll(-5); break;
   }
 
   mouseStep = (mouseStep + 1) % 8;
@@ -76,6 +76,9 @@ void handleButton() {
 
 void setup() {
   Serial.begin(115200);
+  Serial.println("boot"); // pre-initializes newlib's stdio lock on the main
+                           // task before WiFi/mDNS's background task can
+                           // race to init it concurrently during OTA
 
   // Wifi connection
   WiFi.begin(ssid, password);
@@ -101,7 +104,16 @@ void setup() {
   });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    // Throttled to every 10% instead of every callback tick, to cut down
+    // how often this task is mid-print (lowers odds of racing mDNS's
+    // background logging on the stdio lock during OTA).
+    static int lastBucket = -1;
+    unsigned int percent = progress / (total / 100);
+    int bucket = percent / 10; // groups 0-9%, 10-19%, ... into one print each
+    if (bucket != lastBucket) {
+      Serial.printf("Progress: %u%%\r\n", percent);
+      lastBucket = bucket;
+    }
   });
 
   ArduinoOTA.onError([](ota_error_t error) {
@@ -114,6 +126,9 @@ void setup() {
   });
 
   ArduinoOTA.begin();
+  MDNS.end(); // ArduinoOTA starts mDNS internally for discovery, but we
+              // always connect via explicit IP — shutting it down removes
+              // the mDNS packet-handling code path that's been crashing
   Serial.println("OTA Ready");
   ////////////////////////////////////////////////////////////////////END////////////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////OTA////////////////////////////////////////////////////////////////////////////////////////////////

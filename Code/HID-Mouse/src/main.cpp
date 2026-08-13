@@ -6,7 +6,8 @@
 #include <ArduinoOTA.h>
 #include "secrets.h"
 
-#define BUTTON_PIN 22
+#define BUTTON_PIN 23
+#define LED_PIN 21
 #define DEBOUNCE_MS 50
 
 BleMouse bleMouse("Logitech MX Master 3", "Logitech", 88);
@@ -15,6 +16,10 @@ BleMouse bleMouse("Logitech MX Master 3", "Logitech", 88);
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
 
+bool otaInProgress = false;
+unsigned long lastBlinkTime = 0;
+bool ledBlinkState = false;
+const int blinkInterval = 200;
 bool automationEnabled = false;
 
 void moveMouse (int dx, int dy) {
@@ -74,8 +79,13 @@ void handleButton() {
   }
 }
 
+void updateLed() {
+ digitalWrite(LED_PIN, automationEnabled ? HIGH : LOW);
+}
+
 void setup() {
   Serial.begin(115200);
+  pinMode(LED_PIN, OUTPUT);
   Serial.println("boot"); // pre-initializes newlib's stdio lock on the main
                            // task before WiFi/mDNS's background task can
                            // race to init it concurrently during OTA
@@ -96,17 +106,21 @@ void setup() {
   ArduinoOTA.onStart([]() {
     String type = (ArduinoOTA.getCommand() == U_FLASH) ? "sketch" : "filesystem";
     Serial.println("Start updating " + type);
+    otaInProgress = true;
     bleMouse.end(); // Stop BLE mouse to avoid issues during OTA update
   });
 
   ArduinoOTA.onEnd([]() {
     Serial.println("\nUpdate Complete");
+    otaInProgress = false;
   });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    // Throttled to every 10% instead of every callback tick, to cut down
-    // how often this task is mid-print (lowers odds of racing mDNS's
-    // background logging on the stdio lock during OTA).
+    if (millis() - lastBlinkTime >= blinkInterval) {
+      lastBlinkTime = millis();
+      ledBlinkState = !ledBlinkState;
+      digitalWrite(LED_PIN, ledBlinkState);
+    }
     static int lastBucket = -1;
     unsigned int percent = progress / (total / 100);
     int bucket = percent / 10; // groups 0-9%, 10-19%, ... into one print each
@@ -118,6 +132,7 @@ void setup() {
 
   ArduinoOTA.onError([](ota_error_t error) {
     Serial.printf("Error[%u]: ", error);
+    otaInProgress = false;
     if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
     else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
     else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
@@ -141,6 +156,7 @@ void setup() {
 void loop() {
   ArduinoOTA.handle();
   handleButton();
+  updateLed();
 
   if (bleMouse.isConnected() && automationEnabled) {
     runMouse();

@@ -5,6 +5,7 @@
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 #include "secrets.h"
+#include <BLEDevice.h>
 
 #define BUTTON_PIN 23
 #define LED_PIN 21
@@ -21,6 +22,7 @@ unsigned long lastBlinkTime = 0;
 bool ledBlinkState = false;
 const int blinkInterval = 200;
 bool automationEnabled = false;
+bool wasConnected = false;
 
 void moveMouse (int dx, int dy) {
   bleMouse.move(dx, dy);
@@ -157,6 +159,12 @@ void loop() {
   ArduinoOTA.handle();
   handleButton();
   updateLed();
+  bool connected = bleMouse.isConnected();
+
+  if (wasConnected && !connected) {
+    BLEDevice::startAdvertising();
+  }
+  wasConnected = connected;
 
   if (bleMouse.isConnected() && automationEnabled) {
     runMouse();

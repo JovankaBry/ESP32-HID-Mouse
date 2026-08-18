@@ -74,9 +74,23 @@ bool buttonPressed() {
   return pressed;
 }
 
+// Single visible cursor twitch to confirm the button press registered.
+// Moves out and straight back so the cursor ends where it started.
+void nudgeCursor() {
+  if (!bleMouse.isConnected()) return;
+  moveMouse(50, 0);
+  delay(30); // let the host process the first report before the return move
+  moveMouse(-20, 0);
+}
+
 void handleButton() {
   if (buttonPressed()) {
     automationEnabled = !automationEnabled;
+    if (automationEnabled) {
+      nudgeCursor();
+      lastStepTime = millis(); // otherwise runMouse() fires a real step on the
+                               // next loop() and blurs into the nudge
+    }
     Serial.println(automationEnabled ? "Automation resumed" : "Automation paused");
   }
 }

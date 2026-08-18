@@ -6,6 +6,7 @@
 #include <ArduinoOTA.h>
 #include "secrets.h"
 #include <BLEDevice.h>
+#include <HTTPClient.h>
 
 #define BUTTON_PIN 23
 #define LED_PIN 21
@@ -36,6 +37,8 @@ const int step = 30;
 const int stepDelay = 10000;
 int mouseStep = 0;
 unsigned long lastStepTime = 0;
+const int tempInterval = 1000;
+unsigned long lastTempTime = 0;
 
 // Non-blocking: advances one step every `stepDelay` ms instead of using
 // delay(), so loop() stays free to check the button in between steps.
@@ -97,6 +100,18 @@ void handleButton() {
 
 void updateLed() {
  digitalWrite(LED_PIN, automationEnabled ? HIGH : LOW);
+}
+
+void reportTemp() {
+  if (millis() - lastTempTime < tempInterval) return;
+  lastTempTime = millis();
+  float temp = temperatureRead();
+
+  HTTPClient http;
+  http.begin("http://192.168.0.147:5000/api/temp");
+  http.addHeader("Content-Type", "application/json");
+  http.POST("{\"temp\":" + String(temp) + "}");
+  http.end();
 }
 
 void setup() {
@@ -171,6 +186,7 @@ void setup() {
 
 void loop() {
   ArduinoOTA.handle();
+  reportTemp();
   handleButton();
   updateLed();
   bool connected = bleMouse.isConnected();

@@ -1,0 +1,14 @@
+[Unit]
+Description=ESP32 temperature receiver (Flask)
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/apps/esp32-temp
+ExecStart=/usr/bin/python3 /home/pi/apps/esp32-temp/app.py
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

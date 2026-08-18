@@ -110,7 +110,12 @@ void reportTemp() {
   HTTPClient http;
   http.begin("http://192.168.0.147:5000/api/temp");
   http.addHeader("Content-Type", "application/json");
-  http.POST("{\"temp\":" + String(temp) + "}");
+  int code = http.POST("{\"temp\":" + String(temp) + "}");
+  if (code <= 0) {
+    Serial.println("reportTemp failed: " + http.errorToString(code));
+  } else if (code >= 300) {
+    Serial.println("reportTemp failed: HTTP " + String(code));
+  }
   http.end();
 }
 

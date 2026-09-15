@@ -11,11 +11,11 @@ void setup() {
   otaInit();
   buttonInit();
   bleInit();
+  tempInit();
 }
 
 void loop() {
   otaHandler();
-  reportTemp();
   handleButton();
   updateLed();
   bleHandle();

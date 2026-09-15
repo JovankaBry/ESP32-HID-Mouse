@@ -30,7 +30,9 @@ void nudgeCursor() {
 }
 
 void handleButton() {
-  if (buttonPressed()) {
+  bool connected = bleMouse.isConnected();
+
+  if (buttonPressed() && connected) {
     automationEnabled = !automationEnabled;
     if (automationEnabled) {
       nudgeCursor();

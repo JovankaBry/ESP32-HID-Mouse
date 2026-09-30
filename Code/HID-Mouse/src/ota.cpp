@@ -3,6 +3,7 @@
 #include <ESPmDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
+#include <BLEDevice.h>
 #include "secrets.h"
 #include "ota.h"
 #include "ble.h"
@@ -36,7 +37,8 @@ void otaInit() {
     String type = (ArduinoOTA.getCommand() == U_FLASH) ? "sketch" : "filesystem";
     Serial.println("Start updating " + type);
     otaInProgress = true;
-    bleMouse.end(); // Stop BLE mouse to avoid issues during OTA update
+    BLEDevice::deinit(true); // bleMouse.end() is a no-op in this library —
+                              // this actually frees BLE's memory during OTA
   });
 
   ArduinoOTA.onEnd([]() {
@@ -64,6 +66,9 @@ void otaInit() {
     else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
     else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
     else if (error == OTA_END_ERROR) Serial.println("End Failed");
+    bleMouse.begin(); // a successful update reboots and restores BLE via
+                       // setup(), but a failed one doesn't — restart it
+                       // here so the mouse still works after a failed OTA
   });
 
   ArduinoOTA.begin();

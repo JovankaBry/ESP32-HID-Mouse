@@ -2,6 +2,7 @@
 #include <BLEDevice.h>
 #include "ble.h"
 #include "button.h"
+#include "buzzer.h"
 
 BleMouse bleMouse("Logitech MX Master 3", "Logitech", 88);
 
@@ -50,6 +51,9 @@ void bleHandle() {
 
   if (wasConnected && !connected) {
     BLEDevice::startAdvertising();
+  }
+  if (!wasConnected && connected) {
+    bleConnectedBeep();
   }
   wasConnected = connected;
 

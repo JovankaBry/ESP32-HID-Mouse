@@ -46,6 +46,7 @@ void otaInit() {
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
     ledOtaBlink();
+    otaBeep();
     static int lastBucket = -1;
     unsigned int percent = progress / (total / 100);
     int bucket = percent / 10; // groups 0-9%, 10-19%, ... into one print each

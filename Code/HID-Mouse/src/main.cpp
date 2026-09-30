@@ -4,6 +4,7 @@
 #include "led.h"
 #include "ota.h"
 #include "temp.h"
+#include "buzzer.h"
 
 void setup() {
   Serial.begin(115200);
@@ -12,6 +13,7 @@ void setup() {
   buttonInit();
   bleInit();
   tempInit();
+  buzzerInit();
 }
 
 void loop() {

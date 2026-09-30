@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "button.h"
 #include "ble.h"
+#include "buzzer.h"
 
 bool automationEnabled = false;
 bool lastButtonState = HIGH;
@@ -35,9 +36,12 @@ void handleButton() {
   if (buttonPressed() && connected) {
     automationEnabled = !automationEnabled;
     if (automationEnabled) {
+      automationEnabledBeep();
       nudgeCursor();
       lastStepTime = millis(); // otherwise runMouse() fires a real step on the
                                // next loop() and blurs into the nudge
+    } else {
+      automationDisabledBeep();
     }
     Serial.println(automationEnabled ? "Automation resumed" : "Automation paused");
   }

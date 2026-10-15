@@ -9,7 +9,7 @@ void tempTask(void* param) {
       float temp = temperatureRead();
 
       HTTPClient http;
-      http.begin("http://192.168.0.142:5000/api/temp");
+      http.begin("http://192.168.0.143:5000/api/temp");
       http.addHeader("Content-Type", "application/json");
       int code = http.POST("{\"temp\":" + String(temp) + "}");
       if (code <= 0) {

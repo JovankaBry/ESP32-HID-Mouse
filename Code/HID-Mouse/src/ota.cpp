@@ -20,6 +20,15 @@ void otaInit() {
                            // task before WiFi/mDNS's background task can
                            // race to init it concurrently during OTA
 
+  // Static IP so the address stops drifting between DHCP leases
+  IPAddress local_IP(192, 168, 0, 123);
+  IPAddress gateway(192, 168, 0, 1);
+  IPAddress subnet(255, 255, 255, 0);
+
+  if (!WiFi.config(local_IP, gateway, subnet)) {
+    Serial.println("STA Failed to configure");
+  }
+
   // Wifi connection
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
